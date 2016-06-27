@@ -40,22 +40,22 @@
 		"SubnetPublicATag": {
 			"Description": "Subnet Name",
 			"Type": "String",
-			"Default": "IRE-TEST-PublicA"
+			"Default": "IRE-TEST-Public-A"
 			},
 		"SubnetPrivateATag": {
 			"Description": "Subnet Name",
 			"Type": "String",
-			"Default": "IRE-TEST-PrivateA"
+			"Default": "IRE-TEST-Private-A"
 			},
 		"SubnetPublicBTag": {
 			"Description": "Subnet Name",
 			"Type": "String",
-			"Default": "IRE-TEST-PublicB"
+			"Default": "IRE-TEST-Public-B"
 			},
 		"SubnetPrivateBTag": {
 			"Description": "Subnet Name",
 			"Type": "String",
-			"Default": "IRE-TEST-PrivateB"
+			"Default": "IRE-TEST-Private-B"
 			},
 		"KeyName": {
 			"Description": "Key Pair name",
