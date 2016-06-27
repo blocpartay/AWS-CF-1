@@ -1,0 +1,252 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "AN VPC Template v1.0",
+	"Parameters": {
+		"Network": {
+			"Description": "CIDR format ie X.X.X.X/X",
+			"Type": "String",
+			"Default": "192.168.0.0/24"
+			},
+		"Environment": {
+			"Description": "ie 'Test'",
+			"Type": "String",
+			"Default": "Test"
+			},
+		"Name": {
+			"Description": "ie 'VPC Identifer'",
+			"Type": "String",
+			"Default": "IRE-TEST"
+			},
+		"SubnetPublicA": {
+			"Description": "CIDR Format ie X.X.X.X/X",
+			"Type": "String",
+			"Default": "192.168.0.0/26"
+			},
+		"SubnetPrivateA": {
+			"Description": "CIDR Format ie X.X.X.X/X",
+			"Type": "String",
+			"Default": "192.168.0.64/26"
+			},
+		"SubnetPublicB": {
+			"Description": "CIDR Format ie X.X.X.X/X",
+			"Type": "String",
+			"Default": "192.168.0.128/26"
+			},
+		"SubnetPrivateB": {
+			"Description": "CIDR Format ie X.X.X.X/X",
+			"Type": "String",
+			"Default": "192.168.0.192/26"
+			},
+		"SubnetPublicATag": {
+			"Description": "Subnet Name",
+			"Type": "String",
+			"Default": "IRE-TEST-PublicA"
+			},
+		"SubnetPrivateATag": {
+			"Description": "Subnet Name",
+			"Type": "String",
+			"Default": "IRE-TEST-PrivateA"
+			},
+		"SubnetPublicBTag": {
+			"Description": "Subnet Name",
+			"Type": "String",
+			"Default": "IRE-TEST-PublicB"
+			},
+		"SubnetPrivateBTag": {
+			"Description": "Subnet Name",
+			"Type": "String",
+			"Default": "IRE-TEST-PrivateB"
+			},
+		"KeyName": {
+			"Description": "Key Pair name",
+			"Type": "AWS::EC2::KeyPair::KeyName",
+			"Default": "mykey"
+		}
+	},
+	"Resources": {
+		"VPC": {
+			"Type": "AWS::EC2::VPC",
+			"Properties" : {
+            "CidrBlock" : {"Ref": "Network"},
+    	    "EnableDnsSupport" : "false",
+    	    "EnableDnsHostnames" : "false",
+            "InstanceTenancy" : "default",
+            "Tags" : [ {"Key" : "Name", "Value" : { "Ref" : "Name" }}, {"Key" : "Environment", "Value" : { "Ref" : "Environment" }} ]
+			}
+    	},
+		"SubnetIREPublicA": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"AvailabilityZone": {"Fn::Select": ["0", {"Fn::GetAZs": ""}]},
+				"CidrBlock": {"Ref": "SubnetPublicA"},
+				"VpcId": {"Ref": "VPC"},
+				"Tags" : [ {"Key" : "Name", "Value" : { "Ref" : "SubnetPublicATag" }}, {"Key" : "Environment", "Value" : { "Ref" : "Environment" }} ]
+			}
+		},
+		"SubnetIREPrivateA": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"AvailabilityZone": {"Fn::Select": ["0", {"Fn::GetAZs": ""}]},
+				"CidrBlock": {"Ref": "SubnetPrivateA"},
+				"VpcId": {"Ref": "VPC"},
+				"Tags" : [ {"Key" : "Name", "Value" : { "Ref" : "SubnetPrivateATag" }}, {"Key" : "Environment", "Value" : { "Ref" : "Environment" }} ]
+			}
+		},
+		"SubnetIREPublicB": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"AvailabilityZone": {"Fn::Select": ["1", {"Fn::GetAZs": ""}]},
+				"CidrBlock": {"Ref": "SubnetPublicB"},
+				"VpcId": {"Ref": "VPC"},
+				"Tags" : [ {"Key" : "Name", "Value" : { "Ref" : "SubnetPublicBTag" }}, {"Key" : "Environment", "Value" : { "Ref" : "Environment" }} ]
+			}
+		},
+		"SubnetIREPrivateB": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"AvailabilityZone": {"Fn::Select": ["1", {"Fn::GetAZs": ""}]},
+				"CidrBlock": {"Ref": "SubnetPrivateB"},
+				"VpcId": {"Ref": "VPC"},
+				"Tags" : [ {"Key" : "Name", "Value" : { "Ref" : "SubnetPrivateBTag" }}, {"Key" : "Environment", "Value" : { "Ref" : "Environment" }} ]
+			}
+		},
+		"InternetGateway": {
+			"Type": "AWS::EC2::InternetGateway",
+			"Properties": {
+			}
+		},
+		"VPCGatewayAttachment": {
+			"Type": "AWS::EC2::VPCGatewayAttachment",
+			"Properties": {
+				"VpcId": {"Ref": "VPC"},
+				"InternetGatewayId": {"Ref": "InternetGateway"}
+			}
+		},
+		"RouteTablePublicA": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {"Ref": "VPC"},
+				"Tags" : [ {"Key" : "Name", "Value" : { "Ref" : "SubnetPublicATag" }}, {"Key" : "Environment", "Value" : { "Ref" : "Environment" }} ]
+			}
+		},
+		"RouteTableAssociationPublicA": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"SubnetId": {"Ref": "SubnetIREPublicA"},
+				"RouteTableId": {"Ref": "RouteTablePublicA"}
+			}
+		},
+		"RoutePublicNATToInternetA": {
+			"Type": "AWS::EC2::Route",
+			"Properties": {
+				"RouteTableId": {"Ref": "RouteTablePublicA"},
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"GatewayId": {"Ref": "InternetGateway"}
+			},
+			"DependsOn": "VPCGatewayAttachment"
+		},
+		"RouteTablePublicB": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {"Ref": "VPC"},
+				"Tags" : [ {"Key" : "Name", "Value" : { "Ref" : "SubnetPublicBTag" }}, {"Key" : "Environment", "Value" : { "Ref" : "Environment" }} ]
+			}
+		},
+		"RouteTableAssociationPublicB": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"SubnetId": {"Ref": "SubnetIREPublicB"},
+				"RouteTableId": {"Ref": "RouteTablePublicB"}
+			}
+		},
+		"RoutePublicNATToInternetB": {
+			"Type": "AWS::EC2::Route",
+			"Properties": {
+				"RouteTableId": {"Ref": "RouteTablePublicB"},
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"GatewayId": {"Ref": "InternetGateway"}
+			},
+			"DependsOn": "VPCGatewayAttachment"
+		},
+		"RouteTablePrivateA": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {"Ref": "VPC"},
+				"Tags" : [ {"Key" : "Name", "Value" : { "Ref" : "SubnetPrivateATag" }}, {"Key" : "Environment", "Value" : { "Ref" : "Environment" }} ]
+			}
+		},
+		"RouteTableAssociationPrivateA": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"SubnetId": {"Ref": "SubnetIREPrivateA"},
+				"RouteTableId": {"Ref": "RouteTablePrivateA"}
+			}
+		},
+		"RouteTablePrivateB": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {"Ref": "VPC"},
+				"Tags" : [ {"Key" : "Name", "Value" : { "Ref" : "SubnetPrivateBTag" }}, {"Key" : "Environment", "Value" : { "Ref" : "Environment" }} ]
+			}
+		},
+		"RouteTableAssociationPrivateB": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"SubnetId": {"Ref": "SubnetIREPrivateB"},
+				"RouteTableId": {"Ref": "RouteTablePrivateB"}
+			}
+		},
+		"SecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"GroupDescription": "RemoteAccess",
+				"VpcId": {"Ref": "VPC"}
+			}
+		},
+		"SecurityGroupIngress": {
+			"Type": "AWS::EC2::SecurityGroupIngress",
+			"Properties":{
+				"IpProtocol": "TCP",
+				"FromPort": "22",
+				"ToPort": "22",
+				"CidrIp": "0.0.0.0/0",
+				"GroupId": {"Ref": "SecurityGroup"}
+			}
+		},
+		"SecurityGroupEgress": {
+			"Type": "AWS::EC2::SecurityGroupEgress",
+			"Properties":{
+				"IpProtocol": "-1",
+				"FromPort": "-1",
+				"ToPort": "-1",
+				"CidrIp": "0.0.0.0/0",
+				"GroupId": {"Ref": "SecurityGroup"}
+			}
+		},
+		"RemoteAccessInstance": {
+			"Type": "AWS::EC2::Instance",
+			"Properties": {
+				"ImageId": "ami-c39604b0",
+				"InstanceType": "t2.micro",
+				"KeyName": {"Ref": "KeyName"},
+				"NetworkInterfaces": [{
+					"AssociatePublicIpAddress": "true",
+					"DeleteOnTermination": "true",
+					"SubnetId": {"Ref": "SubnetIREPublicA"},
+					"DeviceIndex": "0",
+					"GroupSet": [{"Ref": "SecurityGroup"}]
+				}],
+				"Tags" : [ {"Key" : "Name", "Value" : "Hop-Box" {"Key" : "Environment", "Value" : { "Ref" : "Environment" }}
+			}
+		}
+	},
+	"Outputs" : {
+		"VPC" : {
+			"Value" : { "Ref" : "VPC" }
+			},
+		"Instance" : {
+			"Value" : { "Ref" : "RemoteAccessInstance" }
+			}
+	}
+}
+	
